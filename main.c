@@ -50,39 +50,63 @@ int main(int argc, char *argv) {
     int seek2 = fseek(second, SEEK_SET, 0);
 
     //compare the files
-    while ((checkMatch != 3) && (readFromFirst > 0) && (readFromSecond > 0)) { //todo 0??
+    while ((checkMatch != 3) && (readFromFirst > 0) && (readFromSecond > 0)) {
 
+        //check if need to read from first file
         if (firstCurPosition == readFromFirst) {
+            //read from first file
             readFromFirst = fread(buff1, Size, 1, first);
             firstCurPosition = 0;
         }
+        //check if need to read from second file
         if (secondCurPosition == readFromSecond) {
+            //read from second file
             readFromSecond = fread(buff2, Size, 1, second);
             secondCurPosition = 0;
         }
 
+        //compare what is currently in the buufs
         checkMatch = checkBuffs(buff1, buff2, &firstCurPosition,
                                 &secondCurPosition, readFromFirst, readFromSecond);
 
 
     }
 
-    if (checkMatch != 3) {//todo 0??
+    /*if you finished reading then check if's because we got a un match character
+    /or because we finished with one file and there is still more to read
+    /from the other*/
+    if (checkMatch != 3) {
+        //we finished with the first
         if (readFromFirst == 0) {
+            //check if there anything in second
             if (readFromSecond != 0) {
+                //handle the rest of the file
                 checkMatch = HandleRemainFile(second, buff2, secondCurPosition, readFromSecond);
             }
+            //we finished with the second
         } else if (readFromSecond == 0) {
+            //check if there anything in first
             if (readFromFirst != 0) {
+                //handle the rest of the file
                 checkMatch = HandleRemainFile(first, buff1, firstCurPosition, readFromFirst);
             }
         }
     }
+    //finish the program and release resources
     close(first);
     close(second);
     exit(checkMatch);
 }
 
+/**
+ * the func that handle the rest of one file
+ * if we finished with the other
+ * @param file
+ * @param buff
+ * @param currPosInBuff
+ * @param readFromFile
+ * @return
+ */
 int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFromFile) {
     char temp;
     int res = 1;
@@ -134,13 +158,13 @@ int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t first
                 if (isspace(first[*firstPos])) {
 
                     ++(*firstPos);
-                    result = 2; //todo 2?
+                    result = 2;
                     continue;
                 }
                 if (isspace(sec[*secPos])) {
 
                     ++(*secPos);
-                    result = 2; //todo 2?
+                    result = 2;
                     continue;
                 }
                 result = 3;
