@@ -101,19 +101,21 @@ int main(int argc, char *argv) {
 /**
  * the func that handle the rest of one file
  * if we finished with the other
- * @param file
- * @param buff
- * @param currPosInBuff
- * @param readFromFile
+ * @param file - the file to handle
+ * @param buff - the buff we read to
+ * @param currPosInBuff - current location in buff
+ * @param readFromFile - how much was the last read
  * @return
  */
 int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFromFile) {
     char temp;
     int res = 1;
+
     //clear what's left in the buffer
     while (currPosInBuff < readFromFile) {
         temp = buff[currPosInBuff];
 
+        //check the character
         if (isspace(temp) == 0) {
             res = 3;
         } else {
@@ -122,10 +124,13 @@ int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFrom
         currPosInBuff++;
     }
 
+    //handle the rest of the file
+    //read more
     currPosInBuff = 0;
     readFromFile = fread(buff, Size, 1, file);
+    //handle what we read
     while (readFromFile > 0) {
-
+        //run all over the buffer and check
         while (currPosInBuff < readFromFile) {
             temp = buff[currPosInBuff];
 
@@ -141,26 +146,40 @@ int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFrom
     }
     return res;
 }
-
+/**
+ * a function that compares 2 buffers.
+ * @param first - first buffer
+ * @param sec - sec buffer
+ * @param firstPos - location in first
+ * @param secPos - location in sec
+ * @param firstSize -amount read from first
+ * @param secSize -amount read from sec
+ * @return
+ */
 int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize) {
 
     int result = 1;
-    while ((*firstPos < firstSize) && (*secPos < secSize)) {
+    //run the buffers until one ends or we got a strike
+    while ((*firstPos < firstSize) && (*secPos < secSize) &&(result !=3)) {
 
+        //check if un matching characters
         if (first[*firstPos] != sec[*secPos]) {
+            //check capital letter
             if ((first[*firstPos] >= 97) && (first[*firstPos] <= 122) && (first[*firstPos] == sec[*secPos] + 32) ||
                 ((first[*firstPos] >= 65) && first[*firstPos] <= 90) && (first[*firstPos] == sec[*secPos] - 32)) {
                 ++(*firstPos);
                 ++(*secPos);
                 result = 2;
-
+            //it's not a capital
             } else {
+                //first ia space
                 if (isspace(first[*firstPos])) {
 
                     ++(*firstPos);
                     result = 2;
                     continue;
                 }
+                //second is space
                 if (isspace(sec[*secPos])) {
 
                     ++(*secPos);
