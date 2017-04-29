@@ -3,8 +3,13 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 
-#define Size 100
+#define SIZE 100
+
+int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize);
+
+int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFromFile);
 
 /**
  * the main function.
@@ -13,17 +18,17 @@
  * @param argv - the args
  * @return - hte compare result.
  */
-int main(int argc, char *argv) {
+int main(int argc, char *argv[]) {
 
     //declare variables
     int checkMatch = 1;
     int i = 0;
     ssize_t readFromFirst = 1;
     ssize_t readFromSecond = 1;
-    int firstCurPosition = Size;
-    int secondCurPosition = Size;
-    char buff1[Size + 1];
-    char buff2[Size + 1];
+    int firstCurPosition = SIZE;
+    int secondCurPosition = SIZE;
+    char buff1[SIZE + 1];
+    char buff2[SIZE + 1];
 
     //check we got correct arguments
     if (argc < 3) {
@@ -32,36 +37,39 @@ int main(int argc, char *argv) {
     }
 
     //open first file
-    FILE *first = fopen(argv[1], "r");
-    if (!first) {
+    int first = open(argv[1], O_RDONLY);
+    if (first < 0) {
         perror("failed to open file");
         exit(-1);
     }
 
     //open second file
-    FILE *second = fopen(argv[2], "r");
-    if (!second) {
+    int second = open(argv[2], O_RDONLY);
+    if (second<0) {
         perror("failed to open file");
         exit(-1);
     }
 
     //initialize the file to beginning
-    int seek1 = fseek(first, SEEK_SET, 0);
-    int seek2 = fseek(second, SEEK_SET, 0);
+    off_t seek =  lseek(first,0,SEEK_SET);
+    off_t seek2 = lseek(second, SEEK_SET, 0);
 
+    //todo check uf seek failed
+
+    //todo for any error use write function
     //compare the files
     while ((checkMatch != 3) && (readFromFirst > 0) && (readFromSecond > 0)) {
 
         //check if need to read from first file
         if (firstCurPosition == readFromFirst) {
             //read from first file
-            readFromFirst = fread(buff1, Size, 1, first);
+            readFromFirst = read(first,buff1, SIZE);
             firstCurPosition = 0;
         }
         //check if need to read from second file
         if (secondCurPosition == readFromSecond) {
             //read from second file
-            readFromSecond = fread(buff2, Size, 1, second);
+            readFromSecond = read(second,buff2, SIZE);
             secondCurPosition = 0;
         }
 
@@ -127,7 +135,7 @@ int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFrom
     //handle the rest of the file
     //read more
     currPosInBuff = 0;
-    readFromFile = fread(buff, Size, 1, file);
+    readFromFile = fread(buff, SIZE, 1, file);
     //handle what we read
     while (readFromFile > 0) {
         //run all over the buffer and check
@@ -142,25 +150,26 @@ int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFrom
             currPosInBuff++;
         }
         currPosInBuff = 0;
-        readFromFile = fread(buff, Size, 1, file);
+        readFromFile = fread(buff, SIZE, 1, file);
     }
     return res;
 }
+
 /**
  * a function that compares 2 buffers.
  * @param first - first buffer
  * @param sec - sec buffer
  * @param firstPos - location in first
  * @param secPos - location in sec
- * @param firstSize -amount read from first
- * @param secSize -amount read from sec
+ * @param firstSIZE -amount read from first
+ * @param secSIZE -amount read from sec
  * @return
  */
 int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize) {
 
     int result = 1;
     //run the buffers until one ends or we got a strike
-    while ((*firstPos < firstSize) && (*secPos < secSize) &&(result !=3)) {
+    while ((*firstPos < firstSize) && (*secPos < secSize) && (result != 3)) {
 
         //check if un matching characters
         if (first[*firstPos] != sec[*secPos]) {
@@ -170,7 +179,7 @@ int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t first
                 ++(*firstPos);
                 ++(*secPos);
                 result = 2;
-            //it's not a capital
+                //it's not a capital
             } else {
                 //first ia space
                 if (isspace(first[*firstPos])) {
