@@ -9,7 +9,7 @@
 
 int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize);
 
-int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFromFile);
+int HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile);
 
 /**
  * the main function.
@@ -23,10 +23,12 @@ int main(int argc, char *argv[]) {
     //declare variables
     int checkMatch = 1;
     int i = 0;
-    ssize_t readFromFirst = 1;
-    ssize_t readFromSecond = 1;
-    int firstCurPosition = SIZE;
-    int secondCurPosition = SIZE;
+    int first;
+    int second;
+    ssize_t readFromFirst = 0;
+    ssize_t readFromSecond = 0;
+    int firstCurPosition = 0;
+    int secondCurPosition = 0;
     char buff1[SIZE + 1];
     char buff2[SIZE + 1];
 
@@ -37,48 +39,50 @@ int main(int argc, char *argv[]) {
     }
 
     //open first file
-    int first = open(argv[1], O_RDONLY);
+    first = open(argv[1], O_RDONLY);
     if (first < 0) {
         perror("failed to open file");
         exit(-1);
     }
 
     //open second file
-    int second = open(argv[2], O_RDONLY);
-    if (second<0) {
+    second = open(argv[2], O_RDONLY);
+    if (second < 0) {
         perror("failed to open file");
         exit(-1);
     }
 
     //initialize the file to beginning
-    off_t seek =  lseek(first,0,SEEK_SET);
+    off_t seek = lseek(first, 0, SEEK_SET);
     off_t seek2 = lseek(second, SEEK_SET, 0);
 
-    //todo check uf seek failed
+    //todo check if seek failed
 
     //todo for any error use write function
     //compare the files
-    while ((checkMatch != 3) && (readFromFirst > 0) && (readFromSecond > 0)) {
-
+    do {
         //check if need to read from first file
         if (firstCurPosition == readFromFirst) {
             //read from first file
-            readFromFirst = read(first,buff1, SIZE);
+            readFromFirst = read(first, buff1, SIZE);
             firstCurPosition = 0;
         }
         //check if need to read from second file
         if (secondCurPosition == readFromSecond) {
             //read from second file
-            readFromSecond = read(second,buff2, SIZE);
+            readFromSecond = read(second, buff2, SIZE);
             secondCurPosition = 0;
         }
 
-        //compare what is currently in the buufs
+        //compare what is currently in the buffs
         checkMatch = checkBuffs(buff1, buff2, &firstCurPosition,
                                 &secondCurPosition, readFromFirst, readFromSecond);
 
+    } while (((checkMatch != 3) && (readFromFirst > 0) && (readFromSecond > 0)));
 
-    }
+
+
+
 
     /*if you finished reading then check if's because we got a un match character
     /or because we finished with one file and there is still more to read
@@ -115,7 +119,7 @@ int main(int argc, char *argv[]) {
  * @param readFromFile - how much was the last read
  * @return
  */
-int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFromFile) {
+int HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile) {
     char temp;
     int res = 1;
 
@@ -126,6 +130,7 @@ int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFrom
         //check the character
         if (isspace(temp) == 0) {
             res = 3;
+            return res;
         } else {
             res = 2;
         }
@@ -135,7 +140,7 @@ int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFrom
     //handle the rest of the file
     //read more
     currPosInBuff = 0;
-    readFromFile = fread(buff, SIZE, 1, file);
+    readFromFile = read(file,buff,SIZE);
     //handle what we read
     while (readFromFile > 0) {
         //run all over the buffer and check
@@ -144,6 +149,7 @@ int HandleRemainFile(FILE *file, char *buff, int currPosInBuff, ssize_t readFrom
 
             if (isspace(temp) == 0) {
                 res = 3;
+                return res;
             } else {
                 res = 2;
             }
@@ -198,6 +204,9 @@ int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t first
                 result = 3;
                 break;
             }
+        }else{
+            ++(*firstPos);
+            ++(*secPos);
         }
 
     }
