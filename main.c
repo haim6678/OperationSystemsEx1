@@ -1,3 +1,14 @@
+/******************************************
+*
+Student name: Haim Rubinstein
+*
+Student ID: 203405386
+*
+Course Exercise Group:01
+*
+Exercise name:Ex11
+******************************************/
+
 #include <stdio.h>
 #include <memory.h>
 #include <ctype.h>
@@ -7,19 +18,19 @@
 
 #define SIZE 100
 
-void checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize,
-                ssize_t secSize, int *result);
+void CheckBuffs(char *first, char *sec, int *firstPos, int *secPos,
+                ssize_t firstSize, ssize_t secSize, int *result);
 
-void HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile,
-                      int *result);
+void HandleRemainFile(int file, char *buff, int currPosInBuff,
+                      ssize_t readFromFile, int *result);
 
-/**
+/********************************************
  * the main function.
  * compares the 2 given files.
  * @param argc - number of args for main
  * @param argv - the args
  * @return - hte compare result.
- */
+ *******************************************/
 int main(int argc, char *argv[]) {
 
     //declare variables
@@ -97,14 +108,16 @@ int main(int argc, char *argv[]) {
             //check if there anything in second
             if (readFromSecond != 0) {
                 //handle the rest of the file
-                HandleRemainFile(second, buff2, secondCurPosition, readFromSecond,&checkMatch);
+                HandleRemainFile(second, buff2, secondCurPosition,
+                                 readFromSecond, &checkMatch);
             }
             //we finished with the second
         } else if (readFromSecond == 0) {
             //check if there anything in first
             if (readFromFirst != 0) {
                 //handle the rest of the file
-                HandleRemainFile(first, buff1, firstCurPosition, readFromFirst,&checkMatch);
+                HandleRemainFile(first, buff1, firstCurPosition,
+                                 readFromFirst, &checkMatch);
             }
         }
     }
@@ -114,16 +127,16 @@ int main(int argc, char *argv[]) {
     return checkMatch;
 }
 
-/**
+/********************************************
  * the func that handle the rest of one file
  * if we finished with the other
  * @param file - the file to handle
  * @param buff - the buff we read to
  * @param currPosInBuff - current location in buff
  * @param readFromFile - how much was the last read
- * @return
- */
-void HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile, int *result) {
+ *******************************************/
+void HandleRemainFile(int file, char *buff, int currPosInBuff,
+                      ssize_t readFromFile, int *result) {
 
     char temp;
     //clear what's left in the buffer
@@ -164,7 +177,7 @@ void HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromF
 
 }
 
-/**
+/********************************************
  * a function that compares 2 buffers.
  * @param first - first buffer
  * @param sec - sec buffer
@@ -172,8 +185,9 @@ void HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromF
  * @param secPos - location in sec
  * @param firstSIZE -amount read from first
  * @param secSIZE -amount read from sec
- */
-void checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize, int *result) {
+ *******************************************/
+void checkBuffs(char *first, char *sec, int *firstPos, int *secPos,
+                ssize_t firstSize, ssize_t secSize, int *result) {
 
 
 
@@ -183,8 +197,10 @@ void checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firs
         //check if un matching characters
         if (first[*firstPos] != sec[*secPos]) {
             //check capital letter
-            if ((first[*firstPos] >= 97) && (first[*firstPos] <= 122) && (first[*firstPos] == sec[*secPos] + 32) ||
-                ((first[*firstPos] >= 65) && first[*firstPos] <= 90) && (first[*firstPos] == sec[*secPos] - 32)) {
+            if ((first[*firstPos] >= 97) && (first[*firstPos] <= 122) &&
+                (first[*firstPos] == sec[*secPos] + 32) ||
+                ((first[*firstPos] >= 65) && first[*firstPos] <= 90) &&
+                (first[*firstPos] == sec[*secPos] - 32)) {
                 ++(*firstPos);
                 ++(*secPos);
 
@@ -211,9 +227,7 @@ void checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firs
         } else {
             ++(*firstPos);
             ++(*secPos);
-
         }
-
     }
 }
 
