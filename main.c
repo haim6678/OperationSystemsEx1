@@ -7,9 +7,11 @@
 
 #define SIZE 100
 
-int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize);
+void checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize,
+                ssize_t secSize, int *result);
 
-int HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile);
+void HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile,
+                      int *result);
 
 /**
  * the main function.
@@ -46,15 +48,16 @@ int main(int argc, char *argv[]) {
     }
 
     //open second file
-    second = open(argv[2], O_RDONLY);
+    second = open(argv[2], O_RDWR);
     if (second < 0) {
         perror("failed to open file");
         exit(-1);
     }
 
+
     //initialize the file to beginning
     off_t seek = lseek(first, 0, SEEK_SET);
-    off_t seek2 = lseek(second, SEEK_SET, 0);
+    off_t seek2 = lseek(second, 0, SEEK_SET);
 
     //todo check if seek failed
 
@@ -64,24 +67,25 @@ int main(int argc, char *argv[]) {
         //check if need to read from first file
         if (firstCurPosition == readFromFirst) {
             //read from first file
+            memset(buff1, 0, SIZE);
             readFromFirst = read(first, buff1, SIZE);
             firstCurPosition = 0;
         }
         //check if need to read from second file
         if (secondCurPosition == readFromSecond) {
             //read from second file
+            memset(buff2, 0, SIZE);
             readFromSecond = read(second, buff2, SIZE);
             secondCurPosition = 0;
         }
 
-        //compare what is currently in the buffs
-        checkMatch = checkBuffs(buff1, buff2, &firstCurPosition,
-                                &secondCurPosition, readFromFirst, readFromSecond);
+        if ((readFromFirst > 0) && (readFromSecond > 0)) {
+            //compare what is currently in the buffs
+            checkBuffs(buff1, buff2, &firstCurPosition,
+                       &secondCurPosition, readFromFirst, readFromSecond, &checkMatch);
+        }
 
     } while (((checkMatch != 3) && (readFromFirst > 0) && (readFromSecond > 0)));
-
-
-
 
 
     /*if you finished reading then check if's because we got a un match character
@@ -93,21 +97,21 @@ int main(int argc, char *argv[]) {
             //check if there anything in second
             if (readFromSecond != 0) {
                 //handle the rest of the file
-                checkMatch = HandleRemainFile(second, buff2, secondCurPosition, readFromSecond);
+                HandleRemainFile(second, buff2, secondCurPosition, readFromSecond,&checkMatch);
             }
             //we finished with the second
         } else if (readFromSecond == 0) {
             //check if there anything in first
             if (readFromFirst != 0) {
                 //handle the rest of the file
-                checkMatch = HandleRemainFile(first, buff1, firstCurPosition, readFromFirst);
+                HandleRemainFile(first, buff1, firstCurPosition, readFromFirst,&checkMatch);
             }
         }
     }
     //finish the program and release resources
     close(first);
     close(second);
-    exit(checkMatch);
+    return checkMatch;
 }
 
 /**
@@ -119,20 +123,19 @@ int main(int argc, char *argv[]) {
  * @param readFromFile - how much was the last read
  * @return
  */
-int HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile) {
-    char temp;
-    int res = 1;
+void HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFile, int *result) {
 
+    char temp;
     //clear what's left in the buffer
     while (currPosInBuff < readFromFile) {
         temp = buff[currPosInBuff];
 
         //check the character
         if (isspace(temp) == 0) {
-            res = 3;
-            return res;
+            *result = 3;
+            return;
         } else {
-            res = 2;
+            *result = 2;
         }
         currPosInBuff++;
     }
@@ -140,7 +143,7 @@ int HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFi
     //handle the rest of the file
     //read more
     currPosInBuff = 0;
-    readFromFile = read(file,buff,SIZE);
+    readFromFile = read(file, buff, SIZE);
     //handle what we read
     while (readFromFile > 0) {
         //run all over the buffer and check
@@ -148,17 +151,17 @@ int HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFi
             temp = buff[currPosInBuff];
 
             if (isspace(temp) == 0) {
-                res = 3;
-                return res;
+                *result = 3;
+                return;
             } else {
-                res = 2;
+                *result = 2;
             }
             currPosInBuff++;
         }
         currPosInBuff = 0;
-        readFromFile = fread(buff, SIZE, 1, file);
+        readFromFile = read(file, buff, SIZE);
     }
-    return res;
+
 }
 
 /**
@@ -169,13 +172,13 @@ int HandleRemainFile(int file, char *buff, int currPosInBuff, ssize_t readFromFi
  * @param secPos - location in sec
  * @param firstSIZE -amount read from first
  * @param secSIZE -amount read from sec
- * @return
  */
-int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize) {
+void checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t firstSize, ssize_t secSize, int *result) {
 
-    int result = 1;
+
+
     //run the buffers until one ends or we got a strike
-    while ((*firstPos < firstSize) && (*secPos < secSize) && (result != 3)) {
+    while ((*firstPos < firstSize) && (*secPos < secSize)) {
 
         //check if un matching characters
         if (first[*firstPos] != sec[*secPos]) {
@@ -184,33 +187,34 @@ int checkBuffs(char *first, char *sec, int *firstPos, int *secPos, ssize_t first
                 ((first[*firstPos] >= 65) && first[*firstPos] <= 90) && (first[*firstPos] == sec[*secPos] - 32)) {
                 ++(*firstPos);
                 ++(*secPos);
-                result = 2;
+
+                *result = 2;
                 //it's not a capital
             } else {
                 //first ia space
                 if (isspace(first[*firstPos])) {
 
                     ++(*firstPos);
-                    result = 2;
+                    *result = 2;
                     continue;
                 }
                 //second is space
                 if (isspace(sec[*secPos])) {
 
                     ++(*secPos);
-                    result = 2;
+                    *result = 2;
                     continue;
                 }
-                result = 3;
+                *result = 3;
                 break;
             }
-        }else{
+        } else {
             ++(*firstPos);
             ++(*secPos);
+
         }
 
     }
-    return result;
 }
 
 
