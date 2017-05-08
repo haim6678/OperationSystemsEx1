@@ -19,6 +19,7 @@ Exercise name:Ex11
 #define SIZE 100
 #define READ_FAILED "failed reading from file"
 #define FAILED_CLOSE "failed closing file"
+
 //declare the functions
 void CheckBuffs(char *first, char *sec, int *firstPos, int *secPos,
                 ssize_t firstSize, ssize_t secSize, int *result);
@@ -83,8 +84,8 @@ int main(int argc, char *argv[]) {
             //read from first file
             memset(buff1, 0, SIZE);
             readFromFirst = read(first, buff1, SIZE);
-            if(readFromFirst<0){
-                write(2,READ_FAILED,strlen(READ_FAILED));
+            if (readFromFirst < 0) {
+                write(2, READ_FAILED, strlen(READ_FAILED));
                 exit(-1);
             }
             firstCurPosition = 0;
@@ -94,8 +95,8 @@ int main(int argc, char *argv[]) {
             //read from second file
             memset(buff2, 0, SIZE);
             readFromSecond = read(second, buff2, SIZE);
-            if(readFromSecond<0){
-                write(2,READ_FAILED,strlen(READ_FAILED));
+            if (readFromSecond < 0) {
+                write(2, READ_FAILED, strlen(READ_FAILED));
                 exit(-1);
             }
             secondCurPosition = 0;
@@ -133,12 +134,12 @@ int main(int argc, char *argv[]) {
         }
     }
     //finish the program and release resources
-    if(close(first)<0){
-        write(2,FAILED_CLOSE,strlen(FAILED_CLOSE));
+    if (close(first) < 0) {
+        write(2, FAILED_CLOSE, strlen(FAILED_CLOSE));
         exit(-1);
     }
-    if(close(second)<0){
-        write(2,FAILED_CLOSE,strlen(FAILED_CLOSE));
+    if (close(second) < 0) {
+        write(2, FAILED_CLOSE, strlen(FAILED_CLOSE));
         exit(-1);
     }
     return checkMatch;
@@ -190,6 +191,11 @@ void HandleRemainFile(int file, char *buff, int currPosInBuff,
         }
         currPosInBuff = 0;
         readFromFile = read(file, buff, SIZE);
+
+        if (readFromFile < 0) {
+            write(2, READ_FAILED, strlen(READ_FAILED));
+            exit(-1);
+        }
     }
 
 }
