@@ -17,7 +17,9 @@ Exercise name:Ex11
 #include <fcntl.h>
 
 #define SIZE 100
-
+#define READ_FAILED "failed reading from file"
+#define FAILED_CLOSE "failed closing file"
+//declare the functions
 void CheckBuffs(char *first, char *sec, int *firstPos, int *secPos,
                 ssize_t firstSize, ssize_t secSize, int *result);
 
@@ -35,7 +37,6 @@ int main(int argc, char *argv[]) {
 
     //declare variables
     int checkMatch = 1;
-    int i = 0;
     int first;
     int second;
     ssize_t readFromFirst = 0;
@@ -69,10 +70,12 @@ int main(int argc, char *argv[]) {
     //initialize the file to beginning
     off_t seek = lseek(first, 0, SEEK_SET);
     off_t seek2 = lseek(second, 0, SEEK_SET);
+    if ((seek < 0) || (seek2 < 0)) {
+        perror("failed seeking");
+        exit(-1);
+    }
 
-    //todo check if seek failed
 
-    //todo for any error use write function
     //compare the files
     do {
         //check if need to read from first file
@@ -80,6 +83,10 @@ int main(int argc, char *argv[]) {
             //read from first file
             memset(buff1, 0, SIZE);
             readFromFirst = read(first, buff1, SIZE);
+            if(readFromFirst<0){
+                write(2,READ_FAILED,strlen(READ_FAILED));
+                exit(-1);
+            }
             firstCurPosition = 0;
         }
         //check if need to read from second file
@@ -87,12 +94,16 @@ int main(int argc, char *argv[]) {
             //read from second file
             memset(buff2, 0, SIZE);
             readFromSecond = read(second, buff2, SIZE);
+            if(readFromSecond<0){
+                write(2,READ_FAILED,strlen(READ_FAILED));
+                exit(-1);
+            }
             secondCurPosition = 0;
         }
 
         if ((readFromFirst > 0) && (readFromSecond > 0)) {
             //compare what is currently in the buffs
-            checkBuffs(buff1, buff2, &firstCurPosition,
+            CheckBuffs(buff1, buff2, &firstCurPosition,
                        &secondCurPosition, readFromFirst, readFromSecond, &checkMatch);
         }
 
@@ -122,8 +133,14 @@ int main(int argc, char *argv[]) {
         }
     }
     //finish the program and release resources
-    close(first);
-    close(second);
+    if(close(first)<0){
+        write(2,FAILED_CLOSE,strlen(FAILED_CLOSE));
+        exit(-1);
+    }
+    if(close(second)<0){
+        write(2,FAILED_CLOSE,strlen(FAILED_CLOSE));
+        exit(-1);
+    }
     return checkMatch;
 }
 
@@ -186,7 +203,7 @@ void HandleRemainFile(int file, char *buff, int currPosInBuff,
  * @param firstSIZE -amount read from first
  * @param secSIZE -amount read from sec
  *******************************************/
-void checkBuffs(char *first, char *sec, int *firstPos, int *secPos,
+void CheckBuffs(char *first, char *sec, int *firstPos, int *secPos,
                 ssize_t firstSize, ssize_t secSize, int *result) {
 
 
